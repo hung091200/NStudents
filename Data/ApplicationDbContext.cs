@@ -28,7 +28,24 @@ namespace NStudents.Data
                 .HasForeignKey(s => s.ClassesId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+
+            modelBuilder
+                .Entity<Students>()
+                .Property(s => s.NgaySinh)
+                .HasConversion(
+                    v => v.ToUniversalTime(),
+                    v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+
+            modelBuilder
+                .Entity<Students>()
+                .Property(s => s.NgayNhapHoc)
+                .HasConversion(
+                    v => v.ToUniversalTime(),
+                    v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+
             base.OnModelCreating(modelBuilder);
+
         }
+
     }
 }
