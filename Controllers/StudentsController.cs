@@ -20,7 +20,7 @@ namespace NStudents.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<StudentDto>>> GetStudents()
         {
-            var students = await _unitOfWork.Students.GetStudentsWithClassAndMajorAsync();
+            var students = await _unitOfWork.Students.getAllStudent();
 
             var result = students.Select(s => new StudentDto
             {
@@ -44,7 +44,7 @@ namespace NStudents.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<StudentDto>> GetStudent(int id)
         {
-            var student = await _unitOfWork.Students.GetStudentWithClassAndMajorAsync(id);
+            var student = await _unitOfWork.Students.getAllStudent(id);
             if (student == null) return NotFound();
 
             return new StudentDto
@@ -83,7 +83,7 @@ namespace NStudents.Controllers
             await _unitOfWork.Students.AddAsync(student);
             await _unitOfWork.SaveAsync();
 
-            var newStudent = await _unitOfWork.Students.GetStudentWithClassAndMajorAsync(student.Id);
+            var newStudent = await _unitOfWork.Students.getAllStudent(student.Id);
             if (newStudent == null) return NotFound();
 
             return CreatedAtAction(nameof(GetStudent), new { id = newStudent.Id }, new StudentDto

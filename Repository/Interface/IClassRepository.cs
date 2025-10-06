@@ -1,6 +1,6 @@
 ﻿namespace NStudents.Repository.Interface
 {
-    public class IClassRepository
+    public interface IClassRepository
     {
     }
 }

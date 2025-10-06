@@ -4,7 +4,7 @@ namespace NStudents.Repository.Interface
 {
     public interface IStudentRepository : IGenericRepository<Students>
     {
-        Task<IEnumerable<Students>> GetStudentsWithClassAndMajorAsync();
-        Task<Students?> GetStudentWithClassAndMajorAsync(int id);
+        Task<IEnumerable<Students>> getAllStudent();
+        Task<Students?> getAllStudent(int id);
     }
 }
