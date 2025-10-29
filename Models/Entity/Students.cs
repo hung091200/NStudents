@@ -12,6 +12,8 @@ namespace NStudents.Models.Entity
         public string SoDienThoai { get; set; } = null!;
         public string DiaChi { get; set; } = null!;
         public DateTime NgayNhapHoc { get; set; }
+        public DateTime? NgayTotNghiep { get; set; }
+
         public string TrangThai { get; set; } = null!;
 
         // FK đến Classes

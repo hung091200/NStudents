@@ -9,6 +9,7 @@
         public string ClassName { get; set; } = null!;
         public string MajorName { get; set; } = null!;
         public DateTime NgayNhapHoc { get; internal set; }
+        public DateTime? NgayTotNghiep { get; set; }
         public string TrangThai { get; internal set; } = null!;
         public string DiaChi { get; internal set; } = null!;
         public string SoDienThoai { get; internal set; } = null!;
@@ -25,6 +26,7 @@
         public string SoDienThoai { get; set; } = null!;
         public string DiaChi { get; set; } = null!;
         public DateTime NgayNhapHoc { get; set; }
+        public DateTime? NgayTotNghiep { get; set; }
         public string TrangThai { get; set; } = null!;
         public int ClassesId { get; set; }
     }

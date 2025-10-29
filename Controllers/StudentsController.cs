@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 using NStudents.Models.DTO;
 using NStudents.Models.Entity;
-using NStudents.Repository;
 using NStudents.Repository.Interface;
 
 namespace NStudents.Controllers
@@ -11,127 +12,103 @@ namespace NStudents.Controllers
     public class StudentsController : ControllerBase
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
+        private readonly IMemoryCache _cache;
 
-        public StudentsController(IUnitOfWork unitOfWork)
+        public StudentsController(IUnitOfWork unitOfWork, IMapper mapper, IMemoryCache cache)
         {
             _unitOfWork = unitOfWork;
+            _mapper = mapper;
+            _cache = cache;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<StudentDto>>> GetStudents()
+        public async Task<IActionResult> GetAll()
         {
-            var students = await _unitOfWork.Students.getAllStudent();
-
-            var result = students.Select(s => new StudentDto
+            if (!_cache.TryGetValue("students_all", out IEnumerable<Students> students))
             {
-                Id = s.Id,
-                HoTen = s.HoTen,
-                NgaySinh = s.NgaySinh,
-                GioiTinh = s.GioiTinh,
-                Email = s.Email,
-                SoDienThoai = s.SoDienThoai,
-                DiaChi = s.DiaChi,
-                NgayNhapHoc = s.NgayNhapHoc,
-                TrangThai = s.TrangThai,
-                ClassesId = s.ClassesId,
-                ClassName = s.Classes?.ClassName ?? string.Empty,
-                MajorName = s.Classes?.majors?.MajorName ?? string.Empty
-            }).ToList();
+                students = await _unitOfWork.Students.getAllStudent();
 
+                foreach (var student in students)
+                {
+                    if (student.NgayTotNghiep != null && student.NgayTotNghiep < DateTime.UtcNow)
+                        student.TrangThai = "Đã tốt nghiệp";
+                    else
+                        student.TrangThai = "Chưa tốt nghiệp";
+                }
+
+                var cacheOptions = new MemoryCacheEntryOptions()
+                    .SetAbsoluteExpiration(TimeSpan.FromMinutes(10));
+                _cache.Set("students_all", students, cacheOptions);
+            }
+
+            var result = _mapper.Map<IEnumerable<StudentDto>>(students);
             return Ok(result);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<StudentDto>> GetStudent(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var student = await _unitOfWork.Students.getAllStudent(id);
-            if (student == null) return NotFound();
+            string cacheKey = $"student_{id}";
 
-            return new StudentDto
+            if (!_cache.TryGetValue(cacheKey, out Students student))
             {
-                Id = student.Id,
-                HoTen = student.HoTen,
-                NgaySinh = student.NgaySinh,
-                GioiTinh = student.GioiTinh,
-                Email = student.Email,
-                SoDienThoai = student.SoDienThoai,
-                DiaChi = student.DiaChi,
-                NgayNhapHoc = student.NgayNhapHoc,
-                TrangThai = student.TrangThai,
-                ClassesId = student.ClassesId,
-                ClassName = student.Classes?.ClassName ?? string.Empty,
-                MajorName = student.Classes?.majors?.MajorName ?? string.Empty
-            };
+                student = await _unitOfWork.Students.getAllStudent(id);
+                if (student == null)
+                    return NotFound();
+
+                _cache.Set(cacheKey, student, TimeSpan.FromMinutes(10));
+            }
+
+            var result = _mapper.Map<StudentDto>(student);
+            return Ok(result);
         }
 
         [HttpPost]
-        public async Task<ActionResult<StudentDto>> CreateStudent(StudentCreateDto dto)
+        public async Task<IActionResult> Create(StudentCreateDto dto)
         {
-            var student = new Students
-            {
-                HoTen = dto.HoTen,
-                NgaySinh = dto.NgaySinh,
-                GioiTinh = dto.GioiTinh,
-                Email = dto.Email,
-                SoDienThoai = dto.SoDienThoai,
-                DiaChi = dto.DiaChi,
-                NgayNhapHoc = dto.NgayNhapHoc,
-                TrangThai = dto.TrangThai,
-                ClassesId = dto.ClassesId
-            };
-
-            await _unitOfWork.Students.AddAsync(student);
+            var entity = _mapper.Map<Students>(dto);
+            await _unitOfWork.Students.AddAsync(entity);
             await _unitOfWork.SaveAsync();
 
-            var newStudent = await _unitOfWork.Students.getAllStudent(student.Id);
-            if (newStudent == null) return NotFound();
+            _cache.Remove("students_all");
 
-            return CreatedAtAction(nameof(GetStudent), new { id = newStudent.Id }, new StudentDto
-            {
-                Id = newStudent.Id,
-                HoTen = newStudent.HoTen,
-                NgaySinh = newStudent.NgaySinh,
-                GioiTinh = newStudent.GioiTinh,
-                Email = newStudent.Email,
-                SoDienThoai = newStudent.SoDienThoai,
-                DiaChi = newStudent.DiaChi,
-                NgayNhapHoc = newStudent.NgayNhapHoc,
-                TrangThai = newStudent.TrangThai,
-                ClassName = newStudent.Classes?.ClassName ?? string.Empty,
-                MajorName = newStudent.Classes?.majors?.MajorName ?? string.Empty
-            });
+            var savedStudent = await _unitOfWork.Students.getAllStudent(entity.Id);
+            var result = _mapper.Map<StudentDto>(savedStudent);
+            return Ok(result);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateStudent(int id, StudentUpdateDto dto)
+        public async Task<IActionResult> Update(int id, StudentUpdateDto dto)
         {
             var student = await _unitOfWork.Students.GetByIdAsync(id);
-            if (student == null) return NotFound();
+            if (student == null)
+                return NotFound();
 
-            student.HoTen = dto.HoTen;
-            student.NgaySinh = dto.NgaySinh;
-            student.GioiTinh = dto.GioiTinh;
-            student.Email = dto.Email;
-            student.SoDienThoai = dto.SoDienThoai;
-            student.DiaChi = dto.DiaChi;
-            student.NgayNhapHoc = dto.NgayNhapHoc;
-            student.TrangThai = dto.TrangThai;
-            student.ClassesId = dto.ClassesId;
-
+            _mapper.Map(dto, student);
             _unitOfWork.Students.Update(student);
             await _unitOfWork.SaveAsync();
 
-            return NoContent();
+            _cache.Remove("students_all");
+            _cache.Remove($"student_{id}");
+
+            var result = _mapper.Map<StudentDto>(student);
+            return Ok(result);
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteStudent(int id)
+        public async Task<IActionResult> Delete(int id) 
         {
             var student = await _unitOfWork.Students.GetByIdAsync(id);
-            if (student == null) return NotFound();
+            if (student == null)
+                return NotFound();
 
             _unitOfWork.Students.Delete(student);
             await _unitOfWork.SaveAsync();
+
+            _cache.Remove("students_all");
+            _cache.Remove($"student_{id}");
+
             return NoContent();
         }
     }

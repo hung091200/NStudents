@@ -1,12 +1,16 @@
 using Microsoft.EntityFrameworkCore;
+using NStudents.Mapping;
 using NStudents.Data;
 using NStudents.Repository;
-using NStudents.Repository.Interface; // Add this using directive
+using NStudents.Repository.Interface;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
 
 // Register DbContext BEFORE building the app
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
