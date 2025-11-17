@@ -11,10 +11,11 @@ namespace NStudents.Data
         public DbSet<Majors> Majors { get; set; }
         public DbSet<Classes> Classes { get; set; }
         public DbSet<Students> Students { get; set; }
+        public DbSet<User> Users { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Majors - Classes (1-N)   
+            // Majors - Classes (1-N)
             modelBuilder.Entity<Classes>()
                 .HasOne(c => c.majors)
                 .WithMany(m => m.Classes)
@@ -28,24 +29,28 @@ namespace NStudents.Data
                 .HasForeignKey(s => s.ClassesId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-
-            modelBuilder
-                .Entity<Students>()
+            // Chuyển kiểu ngày sang UTC
+            modelBuilder.Entity<Students>()
                 .Property(s => s.NgaySinh)
                 .HasConversion(
                     v => v.ToUniversalTime(),
                     v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
 
-            modelBuilder
-                .Entity<Students>()
+            modelBuilder.Entity<Students>()
                 .Property(s => s.NgayNhapHoc)
                 .HasConversion(
                     v => v.ToUniversalTime(),
                     v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
 
+
+            modelBuilder.Entity<User>()
+                .HasOne(u => u.Student)
+                .WithOne(s => s.User)
+                .HasForeignKey<User>(u => u.StudentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             base.OnModelCreating(modelBuilder);
 
         }
-
     }
 }

@@ -1,10 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace NStudents.Models.Entity
+﻿namespace NStudents.Models.DTO
 {
-    public class Students
+    public class RegisterDto
     {
-        public int Id { get; set; }
         public string HoTen { get; set; } = null!;
         public DateTime NgaySinh { get; set; }
         public string GioiTinh { get; set; } = null!;
@@ -12,14 +9,10 @@ namespace NStudents.Models.Entity
         public string SoDienThoai { get; set; } = null!;
         public string DiaChi { get; set; } = null!;
         public DateTime NgayNhapHoc { get; set; }
-        public DateTime? NgayTotNghiep { get; set; }
-
-        public string TrangThai { get; set; } = null!;
-
-        // FK đến Classes
         public int ClassesId { get; set; }
-        public Classes? Classes { get; set; }
-        public User? User{ get; set; }
 
+        public string Username { get; set; } = null!;
+        public string Password { get; set; } = null!;
     }
+
 }

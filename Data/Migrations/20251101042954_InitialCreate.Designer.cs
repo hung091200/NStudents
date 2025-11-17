@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NStudents.Data;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace NStudents.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251101042954_InitialCreate")]
+    partial class InitialCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -114,11 +117,11 @@ namespace NStudents.Migrations
 
             modelBuilder.Entity("NStudents.Models.Entity.User", b =>
                 {
-                    b.Property<int>("UserId")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("UserId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
@@ -135,21 +138,11 @@ namespace NStudents.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.HasKey("UserId");
+                    b.HasKey("Id");
 
-                    b.HasIndex("StudentId")
-                        .IsUnique();
+                    b.HasIndex("StudentId");
 
                     b.ToTable("users");
-
-                    b.HasData(
-                        new
-                        {
-                            UserId = 2,
-                            PasswordHash = "$2a$11$SrcZhF8jwQKBmzMqTvsLZOro7b3/PFVHNuLLC3Kg5hd4314wNyLNK",
-                            Role = "Admin",
-                            Username = "admin"
-                        });
                 });
 
             modelBuilder.Entity("NStudents.Models.Entity.Classes", b =>
@@ -177,9 +170,8 @@ namespace NStudents.Migrations
             modelBuilder.Entity("NStudents.Models.Entity.User", b =>
                 {
                     b.HasOne("NStudents.Models.Entity.Students", "Student")
-                        .WithOne("User")
-                        .HasForeignKey("NStudents.Models.Entity.User", "StudentId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .WithMany()
+                        .HasForeignKey("StudentId");
 
                     b.Navigation("Student");
                 });
@@ -192,11 +184,6 @@ namespace NStudents.Migrations
             modelBuilder.Entity("NStudents.Models.Entity.Majors", b =>
                 {
                     b.Navigation("Classes");
-                });
-
-            modelBuilder.Entity("NStudents.Models.Entity.Students", b =>
-                {
-                    b.Navigation("User");
                 });
 #pragma warning restore 612, 618
         }

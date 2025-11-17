@@ -4,10 +4,10 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace NStudents.Data.Migrations
+namespace NStudents.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialMigration : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -58,6 +58,7 @@ namespace NStudents.Data.Migrations
                     SoDienThoai = table.Column<string>(type: "text", nullable: false),
                     DiaChi = table.Column<string>(type: "text", nullable: false),
                     NgayNhapHoc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    NgayTotNghiep = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     TrangThai = table.Column<string>(type: "text", nullable: false),
                     ClassesId = table.Column<int>(type: "integer", nullable: false)
                 },
@@ -72,6 +73,27 @@ namespace NStudents.Data.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "users",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Username = table.Column<string>(type: "text", nullable: false),
+                    PasswordHash = table.Column<string>(type: "text", nullable: false),
+                    Role = table.Column<string>(type: "text", nullable: false),
+                    StudentId = table.Column<int>(type: "integer", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_users", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_users_Students_StudentId",
+                        column: x => x.StudentId,
+                        principalTable: "Students",
+                        principalColumn: "Id");
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_Classes_MajorsId",
                 table: "Classes",
@@ -81,11 +103,19 @@ namespace NStudents.Data.Migrations
                 name: "IX_Students_ClassesId",
                 table: "Students",
                 column: "ClassesId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_users_StudentId",
+                table: "users",
+                column: "StudentId");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "users");
+
             migrationBuilder.DropTable(
                 name: "Students");
 

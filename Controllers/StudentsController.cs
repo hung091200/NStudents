@@ -1,14 +1,17 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using NStudents.Models.DTO;
 using NStudents.Models.Entity;
 using NStudents.Repository.Interface;
+using System.Security.Claims;
 
 namespace NStudents.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class StudentsController : ControllerBase
     {
         private readonly IUnitOfWork _unitOfWork;
@@ -25,37 +28,60 @@ namespace NStudents.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            if (!_cache.TryGetValue("students_all", out IEnumerable<Students> students))
+            var role = User.FindFirstValue(ClaimTypes.Role);
+            if (role == "Student")
             {
-                students = await _unitOfWork.Students.getAllStudent();
+                // Lấy StudentId từ token
+                var studentIdStr = User.FindFirstValue("StudentId");
+                if (string.IsNullOrEmpty(studentIdStr)) return Unauthorized();
 
-                foreach (var student in students)
+                int studentId = int.Parse(studentIdStr);
+                var student = await _unitOfWork.Students.getAllStudent(studentId);
+                if (student == null) return NotFound();
+
+                var result = _mapper.Map<StudentDto>(student);
+                return Ok(result);
+            }
+            else if (role == "Admin")
+            {
+                // Admin xem tất cả
+                if (!_cache.TryGetValue("students_all", out IEnumerable<Students> students))
                 {
-                    if (student.NgayTotNghiep != null && student.NgayTotNghiep < DateTime.UtcNow)
-                        student.TrangThai = "Đã tốt nghiệp";
-                    else
-                        student.TrangThai = "Chưa tốt nghiệp";
+                    students = await _unitOfWork.Students.getAllStudent();
+                    foreach (var student in students)
+                    {
+                        student.TrangThai = (student.NgayTotNghiep != null && student.NgayTotNghiep < DateTime.UtcNow)
+                            ? "Đã tốt nghiệp"
+                            : "Chưa tốt nghiệp";
+                    }
+                    _cache.Set("students_all", students, TimeSpan.FromMinutes(10));
                 }
 
-                var cacheOptions = new MemoryCacheEntryOptions()
-                    .SetAbsoluteExpiration(TimeSpan.FromMinutes(10));
-                _cache.Set("students_all", students, cacheOptions);
+                var result = _mapper.Map<IEnumerable<StudentDto>>(students);
+                return Ok(result);
             }
-
-            var result = _mapper.Map<IEnumerable<StudentDto>>(students);
-            return Ok(result);
+            return Forbid();
         }
+
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            string cacheKey = $"student_{id}";
+            var role = User.FindFirstValue(ClaimTypes.Role);
+            if (role == "Student")
+            {
+                var studentIdStr = User.FindFirstValue("StudentId");
+                if (string.IsNullOrEmpty(studentIdStr)) return Unauthorized();
 
+                int studentId = int.Parse(studentIdStr);
+                if (id != studentId) return Forbid(); // không được xem student khác
+            }
+
+            string cacheKey = $"student_{id}";
             if (!_cache.TryGetValue(cacheKey, out Students student))
             {
                 student = await _unitOfWork.Students.getAllStudent(id);
-                if (student == null)
-                    return NotFound();
+                if (student == null) return NotFound();
 
                 _cache.Set(cacheKey, student, TimeSpan.FromMinutes(10));
             }
@@ -65,6 +91,7 @@ namespace NStudents.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create(StudentCreateDto dto)
         {
             var entity = _mapper.Map<Students>(dto);
@@ -79,6 +106,7 @@ namespace NStudents.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Update(int id, StudentUpdateDto dto)
         {
             var student = await _unitOfWork.Students.GetByIdAsync(id);
@@ -97,6 +125,7 @@ namespace NStudents.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id) 
         {
             var student = await _unitOfWork.Students.GetByIdAsync(id);
@@ -110,6 +139,21 @@ namespace NStudents.Controllers
             _cache.Remove($"student_{id}");
 
             return NoContent();
+        }
+
+        [HttpGet("me")]
+        [Authorize(Roles = "Student")]
+        public async Task<IActionResult> GetMyInfo()
+        {
+            var studentIdStr = User.FindFirstValue("StudentId");
+            if (string.IsNullOrEmpty(studentIdStr)) return Unauthorized();
+
+            int studentId = int.Parse(studentIdStr);
+            var student = await _unitOfWork.Students.getAllStudent(studentId);
+            if (student == null) return NotFound();
+
+            var result = _mapper.Map<StudentDto>(student);
+            return Ok(result);
         }
     }
 }

@@ -9,11 +9,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace NStudents.Data.Migrations
+namespace NStudents.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251028075514_AddNgayTotNghiepToStudents")]
-    partial class AddNgayTotNghiepToStudents
+    [Migration("20251114074735_KhongBietLoiChoNao")]
+    partial class KhongBietLoiChoNao
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -115,6 +115,37 @@ namespace NStudents.Data.Migrations
                     b.ToTable("Students");
                 });
 
+            modelBuilder.Entity("NStudents.Models.Entity.User", b =>
+                {
+                    b.Property<int>("UserId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("UserId"));
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("StudentId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("UserId");
+
+                    b.HasIndex("StudentId")
+                        .IsUnique();
+
+                    b.ToTable("users");
+                });
+
             modelBuilder.Entity("NStudents.Models.Entity.Classes", b =>
                 {
                     b.HasOne("NStudents.Models.Entity.Majors", "majors")
@@ -137,6 +168,16 @@ namespace NStudents.Data.Migrations
                     b.Navigation("Classes");
                 });
 
+            modelBuilder.Entity("NStudents.Models.Entity.User", b =>
+                {
+                    b.HasOne("NStudents.Models.Entity.Students", "Student")
+                        .WithOne("User")
+                        .HasForeignKey("NStudents.Models.Entity.User", "StudentId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Student");
+                });
+
             modelBuilder.Entity("NStudents.Models.Entity.Classes", b =>
                 {
                     b.Navigation("Students");
@@ -145,6 +186,11 @@ namespace NStudents.Data.Migrations
             modelBuilder.Entity("NStudents.Models.Entity.Majors", b =>
                 {
                     b.Navigation("Classes");
+                });
+
+            modelBuilder.Entity("NStudents.Models.Entity.Students", b =>
+                {
+                    b.Navigation("User");
                 });
 #pragma warning restore 612, 618
         }

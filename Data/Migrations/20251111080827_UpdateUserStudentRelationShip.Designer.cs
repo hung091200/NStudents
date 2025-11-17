@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NStudents.Data;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace NStudents.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251111080827_UpdateUserStudentRelationShip")]
+    partial class UpdateUserStudentRelationShip
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -141,15 +144,6 @@ namespace NStudents.Migrations
                         .IsUnique();
 
                     b.ToTable("users");
-
-                    b.HasData(
-                        new
-                        {
-                            UserId = 2,
-                            PasswordHash = "$2a$11$SrcZhF8jwQKBmzMqTvsLZOro7b3/PFVHNuLLC3Kg5hd4314wNyLNK",
-                            Role = "Admin",
-                            Username = "admin"
-                        });
                 });
 
             modelBuilder.Entity("NStudents.Models.Entity.Classes", b =>
@@ -178,8 +172,7 @@ namespace NStudents.Migrations
                 {
                     b.HasOne("NStudents.Models.Entity.Students", "Student")
                         .WithOne("User")
-                        .HasForeignKey("NStudents.Models.Entity.User", "StudentId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .HasForeignKey("NStudents.Models.Entity.User", "StudentId");
 
                     b.Navigation("Student");
                 });

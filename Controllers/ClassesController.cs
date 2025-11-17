@@ -1,13 +1,15 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NStudents.Data;
-using NStudents.Models.Entity;
 using NStudents.Models.DTO;
+using NStudents.Models.Entity;
 
 namespace NStudents.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Admin")]
     public class ClassesController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
